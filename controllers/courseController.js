@@ -1,16 +1,9 @@
-const { Course, Teacher, Session, User } = require('../models');
+const courseService = require('../services/courseService');
 
+// Kurs oluşturma controllerı
 exports.createCourse = async (req, res) => {
   try {
-    const { title, course_no, total_sessions, teacher_id } = req.body;
-
-    const course = await Course.create({
-      title,
-      course_no,
-      total_sessions,
-      teacher_id
-    });
-
+    const course = await courseService.createCourse(req.body);
     res.status(201).json({ message: 'Kurs oluşturuldu', course });
   } catch (error) {
     console.error('Kurs oluşturulurken hata:', error);
@@ -18,90 +11,63 @@ exports.createCourse = async (req, res) => {
   }
 };
 
-// Tüm kursları listeleme
+// Tüm kursları listeleme controllerı
 exports.getAllCourses = async (req, res) => {
-    try {
-      const courses = await Course.findAll({
-        include: [
-          {
-            model: Teacher,
-            include: [User] // öğretmenin User bilgileri
-          },
-          {
-            model: Session
-          }
-        ]
-      });
-  
-      res.json(courses);
-    } catch (error) {
-      console.error('Kurslar alınamadı:', error);
-      res.status(500).json({ message: 'Sunucu hatası' });
-    }
-  };
+  try {
+    const courses = await courseService.getAllCourses();
+    res.json(courses);
+  } catch (error) {
+    console.error('Kurslar alınamadı:', error);
+    res.status(500).json({ message: 'Sunucu hatası' });
+  }
+};
 
 // Kurs ID ile kursu alma
-  exports.getCourseById = async (req, res) => {
-    const { id } = req.params;
-  
-    try {
-      const course = await Course.findByPk(id, {
-        include: [
-          {
-            model: Teacher,
-            include: ['User'], // öğretmenin kullanıcı bilgilerini de istersek
-          },
-          {
-            model: Session,
-          }
-        ]
-      });
-  
-      if (!course) {
-        return res.status(404).json({ message: 'Kurs bulunamadı' });
-      }
-  
-      res.json(course);
-    } catch (error) {
-      console.error('Kurs alınamadı:', error);
-      res.status(500).json({ message: 'Sunucu hatası' });
-    }
-  };
+exports.getCourseById = async (req, res) => {
+  const { id } = req.params;
 
-  exports.addSessionToCourse = async (req, res) => {
-    const courseId = req.params.id;
-    const { date, topic, notes } = req.body;
-  
-    try {
-      const course = await Course.findByPk(courseId);
-      if (!course) {
-        return res.status(404).json({ message: 'Kurs bulunamadı' });
-      }
-  
-      const sessionCount = await Session.count({ where: { course_id: courseId } });
-  
-      const newSession = await Session.create({
-        session_number: sessionCount + 1,
-        course_id: courseId,
-        date,
-        topic,
-        notes
-      });
-  
-      res.status(201).json(newSession);
-    } catch (error) {
-      console.error('Session eklenemedi:', error);
-      res.status(500).json({ message: 'Sunucu hatası' });
-    }
-  };
+  try {
+    const course = await courseService.getCourseById(id);
 
+    if (!course) {
+      return res.status(404).json({ message: 'Kurs bulunamadı' });
+    }
+
+    res.json(course);
+  } catch (error) {
+    console.error('Kurs alınamadı:', error);
+    res.status(500).json({ message: 'Sunucu hatası' });
+  }
+};
+
+// Kursa yeni bir oturum ekleme
+exports.addSessionToCourse = async (req, res) => {
+  const courseId = req.params.id;
+  const { date, topic, notes } = req.body;
+
+  try {
+    const newSession = await courseService.addSessionToCourse(courseId, { date, topic, notes });
+
+    if (!newSession) {
+      return res.status(404).json({ message: 'Kurs bulunamadı' });
+    }
+
+    res.status(201).json(newSession);
+  } catch (error) {
+    console.error('Session eklenemedi:', error);
+    res.status(500).json({ message: 'Sunucu hatası' });
+  }
+};
+
+
+// Oğrencilerin yoklamasını ekleme
 exports.markAttendance = async (req, res) => {
     try {
       const { sessionId } = req.params;
       const { attendance } = req.body;
       // attendance örneği: [{ studentId: 1, attended: true }, { studentId: 2, attended: false }]
   
-      const session = await db.Session.findByPk(sessionId);
+      const session = await Session.findByPk(sessionId);
       if (!session) {
         return res.status(404).json({ message: 'Session not found' });
       }
@@ -118,4 +84,19 @@ exports.markAttendance = async (req, res) => {
       res.status(500).json({ message: 'Yoklama eklenemedi' });
     }
   };
+
+  // Öğrenciyi kursa kaydetme
+  exports.enrollStudentToCourse = async (req, res) => {
+    const { id: courseId } = req.params;
+    const { studentId } = req.body;
+  
+    try {
+      const result = await courseService.enrollStudentToCourse(courseId, studentId);
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Kursa kayıt hatası:', error);
+      res.status(500).json({ message: error.message || 'Sunucu hatası' });
+    }
+  };
+  
   
