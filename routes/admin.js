@@ -6,8 +6,6 @@ const courseController = require('../controllers/courseController');
 const verifyToken = require('../middleware/verifyToken');
 const isAdmin = require('../middleware/isAdmin');
 
-// POST /admin/login
-router.post('/login', adminController.login);
 
 // POST /admin/teachers
 router.post('/teachers',verifyToken,isAdmin,adminController.addTeacher);
