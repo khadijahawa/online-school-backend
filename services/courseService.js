@@ -57,7 +57,6 @@ exports.getCourseById = async (id) => {
     }
   };
 
-
 // Kursa oturum ekleme servisi
 exports.addSessionToCourse = async (courseId, sessionData) => {
     const course = await db.Course.findByPk(courseId);
@@ -76,7 +75,19 @@ exports.addSessionToCourse = async (courseId, sessionData) => {
     return newSession;
   };
   
+// Kursa ait oturumlarda yoklama alma servisi 
+exports.markAttendance = async (sessionId, attendance) => {
+    const session = await db.Session.findByPk(sessionId);
+    if (!session) return null;
   
+    for (const entry of attendance) {
+      await session.addStudent(entry.studentId, {
+        through: { attended: entry.attended },
+      });
+    }
+  
+    return true;
+  };  
 
 //Öğrenci kursa kaydetme servisi
 const enrollStudentToCourse = async (courseId, studentId) => {

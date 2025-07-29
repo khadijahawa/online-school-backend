@@ -59,33 +59,26 @@ exports.addSessionToCourse = async (req, res) => {
   }
 };
 
-
-// Oğrencilerin yoklamasını ekleme
+// Oğrencilerin yoklamasını ekleme controllerı
 exports.markAttendance = async (req, res) => {
-    try {
-      const { sessionId } = req.params;
-      const { attendance } = req.body;
-      // attendance örneği: [{ studentId: 1, attended: true }, { studentId: 2, attended: false }]
-  
-      const session = await Session.findByPk(sessionId);
-      if (!session) {
-        return res.status(404).json({ message: 'Session not found' });
-      }
-  
-      for (const entry of attendance) {
-        await session.addStudent(entry.studentId, {
-          through: { attended: entry.attended },
-        });
-      }
-  
-      res.status(200).json({ message: 'Yoklama başarıyla eklendi' });
-    } catch (err) {
-      console.error('Yoklama hatası:', err);
-      res.status(500).json({ message: 'Yoklama eklenemedi' });
-    }
-  };
+  const { sessionId } = req.params;
+  const { attendance } = req.body;
 
-  // Öğrenciyi kursa kaydetme
+  try {
+    const result = await courseService.markAttendance(sessionId, attendance);
+
+    if (!result) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    res.status(200).json({ message: 'Yoklama başarıyla eklendi' });
+  } catch (err) {
+    console.error('Yoklama hatası:', err);
+    res.status(500).json({ message: 'Yoklama eklenemedi' });
+  }
+};
+
+// Öğrenciyi kursa kaydetme
   exports.enrollStudentToCourse = async (req, res) => {
     const { id: courseId } = req.params;
     const { studentId } = req.body;
