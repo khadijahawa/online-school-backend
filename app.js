@@ -9,7 +9,8 @@ const authRoutes = require('./routes/auth');
 // JSON body parse
 app.use(express.json());
 
-
+const tempRoutes = require('./routes/temp');
+app.use('/temp', tempRoutes);
 app.use('/auth', authRoutes); 
 app.use('/admin', adminRoutes);
 app.use('/students', studentRoutes);
