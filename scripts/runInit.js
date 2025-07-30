@@ -1,20 +1,25 @@
+require('dotenv').config();
 const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-const dbName = "okul_platformu";
-const dbUser = "postgres";
-const dbPassword = "senin_sifren"; // <- burayı değiştir eger sifren varsa
-const dbHost = "localhost";
-const dbPort = 5432;
+const dbName = process.env.DB_NAME;
+const dbUser = process.env.DB_USER;
+const dbPassword = process.env.DB_PASS
+const dbHost = process.env.DB_HOST;
+const dbPort =  5432;
 
+console.log("DB_NAME:", dbName);
+console.log("DB_USER:", dbUser);
+console.log("DB_HOST:", dbHost);
+console.log("DB_PORT:", dbPassword);
 // 1. Ana bağlantı: postgres veritabanına bağlan ve veritabanı varsa oluşturma
 const createDatabase = async () => {
   const client = new Client({
     user: dbUser,
     host: dbHost,
     database: "postgres", // sistem veritabanı
-    //password: dbPassword,   // sifren varsa burayı aç 
+    password: dbPassword,   // sifren varsa burayı aç 
     port: dbPort,
   });
 
@@ -47,7 +52,7 @@ const runInitSQL = async () => {
     user: dbUser,
     host: dbHost,
     database: dbName,
-    //password: dbPassword,    sifren varsa burayı aç
+    password: dbPassword,    //sifren varsa burayı aç
     port: dbPort,
   });
 
@@ -64,6 +69,6 @@ const runInitSQL = async () => {
 
 // Hepsini çalıştır
 (async () => {
-  await createDatabase();
+  //await createDatabase();
   await runInitSQL();
 })();
