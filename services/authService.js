@@ -1,33 +1,35 @@
+const dotenv = require('dotenv');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
+const { createAccessToken, createRefreshToken } = require('../utils/token');
+const REFRESH_SECRET = process.env.REFRESH_SECRET || 'refreshsecret';
 
-const SECRET_KEY = process.env.JWT_SECRET;
-
-const login = async (email, password) => {
+exports.login = async (email, password) => {
   const user = await User.findOne({ where: { email } });
-
   if (!user) {
-    throw new Error('Kullanıcı bulunamadı.');
+    throw new Error('Kullanıcı bulunamadı');
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    throw new Error('Şifre yanlış.');
+    throw new Error('Şifre yanlış');
   }
 
-  const token = jwt.sign({ id: user.id, role: user.role }, SECRET_KEY, {
-    expiresIn: '1h',
-  });
+  const payload = { id: user.id, role: user.role };
 
-  return {
-    message: 'Giriş başarılı',
-    token,
-    role: user.role,
-    userId: user.id
-  };
+  const accessToken = createAccessToken(payload);
+  const refreshToken = createRefreshToken(payload);
+
+  return { accessToken, refreshToken };
 };
 
-module.exports = {
-  login,
+exports.refreshAccessToken = (refreshToken) => {
+  try {
+    const decoded = jwt.verify(refreshToken, REFRESH_SECRET);
+    const newAccessToken = createAccessToken({ id: decoded.id, role: decoded.role });
+    return newAccessToken;
+  } catch (err) {
+    throw new Error('Geçersiz veya süresi dolmuş refresh token');
+  }
 };
