@@ -7,7 +7,7 @@ const dbName = process.env.DB_NAME;
 const dbUser = process.env.DB_USER;
 const dbPassword = process.env.DB_PASS
 const dbHost = process.env.DB_HOST;
-const dbPort =  5432;
+const dbPort = process.env.DB_PORT || 5432;
 
 console.log("DB_NAME:", dbName);
 console.log("DB_USER:", dbUser);

@@ -4,6 +4,8 @@
   "description": "",
   "main": "app.js",
   "scripts": {
+    "init": "node scripts/runInit.js",
+    "start": "node scripts/runInit.js && node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
