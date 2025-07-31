@@ -50,45 +50,64 @@ exports.getAllCourses = async (user) => {
 
 
 // Kurs ID ile kursu alma servisi
-exports.getCourseById = async (id) => {
-    try {
-      const course = await db.Course.findByPk(id, {
-        include: [
-          {
-            model: db.Teacher,
-            include: [db.User],
-          },
-          {
-            model: db.Session,
-          },
-        ],
-      });
-  
-      return course;
-    } catch (error) {
-      throw error;
+exports.getCourseById = async (courseId, user) => {
+  try {
+    const whereClause = { id: courseId };
+
+    // Sadece öğretmense teacher_id'yi kontrol et
+    if (user.role === 'teacher') {
+      whereClause.teacher_id = user.teacherId;
     }
-  };
+
+    const course = await db.Course.findOne({
+      where: whereClause,
+      include: [
+        {
+          model: db.Teacher,
+          include: [db.User],
+        },
+        {
+          model: db.Session,
+        }
+      ]
+    });
+
+    if (!course) throw new Error('Kurs bulunamadı');
+
+    return course;
+  } catch (err) {
+    throw err;
+  }
+};
 
 // Kursa oturum ekleme servisi
-exports.addSessionToCourse = async (courseId, sessionData) => {
+exports.addSessionToCourse = async (courseId, sessionData, user) => {
+  try {
     const course = await db.Course.findByPk(courseId);
+
     if (!course) {
-      return null;
+      throw new Error('Kurs bulunamadı');
     }
-    if (req.user.role === 'teacher' && course.teacher_id !== req.user.id) {
-      return res.status(403).json({ message: 'Bu kursa oturum ekleyemezsiniz' });
+
+    // Eğer öğretmense ve bu kurs onun değilse, izin verme
+    if (user.role === 'teacher' && course.teacher_id !== user.teacherId) {
+      throw new Error('Bu kursa oturum ekleyemezsiniz');
     }
+
     const sessionCount = await db.Session.count({ where: { course_id: courseId } });
-  
+
     const newSession = await db.Session.create({
       session_number: sessionCount + 1,
       course_id: courseId,
-      ...sessionData,
+      ...sessionData
     });
-  
+
     return newSession;
-  };
+  } catch (error) {
+    throw error;
+  }
+};
+
   
 // Kursa ait oturumlarda yoklama alma servisi 
 exports.markAttendance = async (sessionId, attendance) => {
@@ -103,6 +122,34 @@ exports.markAttendance = async (sessionId, attendance) => {
   
     return true;
   };  
+
+exports.markAttendance = async (sessionId, attendanceData, user) => {
+  try {
+    const session = await db.Session.findByPk(sessionId, {
+      include: db.Course
+    });
+  
+    if (!session) {
+      throw new Error("Session not found");
+    }
+  
+  // Eğer teacher ise ve kendi dersi değilse yetki hatası ver
+    if (user.role === 'teacher' && session.Course.teacher_id !== user.teacherId) {
+      throw new Error("Bu oturuma yoklama ekleme yetkiniz yok");
+    }
+  
+  // Attendance ekleme
+    for (const entry of attendanceData) {
+      await session.addStudent(entry.studentId, {
+        through: { attended: entry.attended }
+      });
+    }
+  
+    return { message: 'Yoklama başarıyla eklendi' };
+  } catch (error) {
+    throw error;
+  }
+};
 
 //Öğrenci kursa kaydetme servisi
 exports.enrollStudentToCourse = async (courseId, studentId) => {
