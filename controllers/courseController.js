@@ -14,7 +14,7 @@ exports.createCourse = async (req, res) => {
 // Tüm kursları listeleme controllerı
 exports.getAllCourses = async (req, res) => {
   try {
-    const courses = await courseService.getAllCourses();
+    const courses = await courseService.getAllCourses(req.user);
     res.json(courses);
   } catch (error) {
     console.error('Kurslar alınamadı:', error);

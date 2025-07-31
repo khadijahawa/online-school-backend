@@ -1,4 +1,5 @@
 const db = require('../models');
+const teacher = require('../models/teacher');
 
 // Kurs oluşturma servisi
 exports.createCourse = async ({ title, course_no, total_sessions, teacher_id }) => {
@@ -16,25 +17,37 @@ exports.createCourse = async ({ title, course_no, total_sessions, teacher_id }) 
   };
 
 // Tüm kursları listeleme servisi
-exports.getAllCourses = async () => {
-try {
-  const courses = await db.Course.findAll({
-    include: [
-      {
-        model: db.Teacher,
-        include: [db.User]
-      },
-      {
-        model: db.Session
+exports.getAllCourses = async (user) => {
+  try {
+    let whereCondition = {};
+
+    // Eğer teacher ise sadece kendi kurslarını getirsin
+    if (user.role === 'teacher') {
+      if (!user.teacherId) {
+        throw new Error("Teacher ID bulunamadı");
       }
-    ]
-  });
-  
-  return courses;
-} catch (error) {
-  throw error;
-}
+      whereCondition.teacher_id = user.teacherId;
+    }
+
+    const courses = await db.Course.findAll({
+      where: whereCondition,
+      include: [
+        {
+          model: db.Teacher,
+          include: [db.User]
+        },
+        {
+          model: db.Session
+        }
+      ]
+    });
+
+    return courses;
+  } catch (error) {
+    throw error;
+  }
 };
+
 
 // Kurs ID ile kursu alma servisi
 exports.getCourseById = async (id) => {
@@ -63,7 +76,9 @@ exports.addSessionToCourse = async (courseId, sessionData) => {
     if (!course) {
       return null;
     }
-  
+    if (req.user.role === 'teacher' && course.teacher_id !== req.user.id) {
+      return res.status(403).json({ message: 'Bu kursa oturum ekleyemezsiniz' });
+    }
     const sessionCount = await db.Session.count({ where: { course_id: courseId } });
   
     const newSession = await db.Session.create({
