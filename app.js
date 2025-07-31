@@ -1,13 +1,24 @@
 require('dotenv').config();
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const cors = require('cors');
+
 const app = express();
 const adminRoutes = require('./routes/admin');
 const studentRoutes = require('./routes/student');
 const courseRoutes = require('./routes/course');
 const authRoutes = require('./routes/auth');
 
+// CORS ayarları
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN, // Örnek: "http://localhost:5173"
+  credentials: true, // cookie taşımak için gerekli
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
 // JSON body parse
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 

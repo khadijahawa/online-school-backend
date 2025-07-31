@@ -25,9 +25,10 @@ exports.getAllCourses = async (req, res) => {
 // Kurs ID ile kursu alma
 exports.getCourseById = async (req, res) => {
   const { id } = req.params;
+  const user = req.user;
 
   try {
-    const course = await courseService.getCourseById(id);
+    const course = await courseService.getCourseById(id, user);
 
     if (!course) {
       return res.status(404).json({ message: 'Kurs bulunamadı' });
@@ -36,26 +37,22 @@ exports.getCourseById = async (req, res) => {
     res.json(course);
   } catch (error) {
     console.error('Kurs alınamadı:', error);
-    res.status(500).json({ message: 'Sunucu hatası' });
+    res.status(404).json({ message: error.message || 'Sunucu hatası' });
   }
 };
 
 // Kursa yeni bir oturum ekleme
 exports.addSessionToCourse = async (req, res) => {
   const courseId = req.params.id;
-  const { date, topic, notes } = req.body;
+  const sessionData = req.body;
+  const user = req.user;
 
   try {
-    const newSession = await courseService.addSessionToCourse(courseId, { date, topic, notes });
-
-    if (!newSession) {
-      return res.status(404).json({ message: 'Kurs bulunamadı' });
-    }
-
+    const newSession = await courseService.addSessionToCourse(courseId, sessionData, user);
     res.status(201).json(newSession);
   } catch (error) {
     console.error('Session eklenemedi:', error);
-    res.status(500).json({ message: 'Sunucu hatası' });
+    res.status(403).json({ message: error.message || 'Sunucu hatası' });
   }
 };
 
@@ -63,18 +60,14 @@ exports.addSessionToCourse = async (req, res) => {
 exports.markAttendance = async (req, res) => {
   const { sessionId } = req.params;
   const { attendance } = req.body;
+  const user = req.user;
 
   try {
-    const result = await courseService.markAttendance(sessionId, attendance);
-
-    if (!result) {
-      return res.status(404).json({ message: 'Session not found' });
-    }
-
-    res.status(200).json({ message: 'Yoklama başarıyla eklendi' });
+    const result = await courseService.markAttendance(sessionId, attendance, user);
+    res.status(200).json(result);
   } catch (err) {
     console.error('Yoklama hatası:', err);
-    res.status(500).json({ message: 'Yoklama eklenemedi' });
+    res.status(500).json({ message: err.message || 'Yoklama eklenemedi' });
   }
 };
 
