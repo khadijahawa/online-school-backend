@@ -90,7 +90,7 @@ exports.markAttendance = async (sessionId, attendance) => {
   };  
 
 //Öğrenci kursa kaydetme servisi
-const enrollStudentToCourse = async (courseId, studentId) => {
+exports.enrollStudentToCourse = async (courseId, studentId) => {
   const course = await db.Course.findByPk(courseId);
   if (!course) throw new Error('Kurs bulunamadı');
 
@@ -101,6 +101,3 @@ const enrollStudentToCourse = async (courseId, studentId) => {
   return { message: 'Öğrenci başarıyla kursa kaydedildi' };
 };
 
-module.exports = {
-  enrollStudentToCourse,
-};
