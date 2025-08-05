@@ -8,10 +8,8 @@ const isTeacherOrAdmin = require('../middleware/isTeacherOrAdmin');
 router.get('/', verifyToken, isTeacherOrAdmin, courseController.getAllCourses);
 router.get('/:id', verifyToken, isAdmin, courseController.getCourseById);
 router.post('/:id/sessions', verifyToken, isTeacherOrAdmin, courseController.addSessionToCourse);
-router.post('/sessions/:sessionId/attendance',isTeacherOrAdmin, verifyToken, courseController.markAttendance);
-
-router.post('/:id/enroll', verifyToken, isAdmin, courseController.enrollStudentToCourse); // ogrenciyi kursa kaydetmeyi admin mi yapmali sadece?
-
+router.post('/sessions/:sessionId/attendance', verifyToken, isTeacherOrAdmin, courseController.markAttendance);
+router.post('/:id/enroll', verifyToken, isAdmin, courseController.enrollStudentToCourse); 
 
 
 module.exports = router;

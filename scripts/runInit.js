@@ -69,6 +69,6 @@ const runInitSQL = async () => {
 
 // Hepsini çalıştır
 (async () => {
-  //await createDatabase();
+  await createDatabase();
   await runInitSQL();
 })();

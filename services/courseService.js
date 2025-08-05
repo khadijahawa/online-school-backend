@@ -108,21 +108,6 @@ exports.addSessionToCourse = async (courseId, sessionData, user) => {
   }
 };
 
-  
-// Kursa ait oturumlarda yoklama alma servisi 
-exports.markAttendance = async (sessionId, attendance) => {
-    const session = await db.Session.findByPk(sessionId);
-    if (!session) return null;
-  
-    for (const entry of attendance) {
-      await session.addStudent(entry.studentId, {
-        through: { attended: entry.attended },
-      });
-    }
-  
-    return true;
-  };  
-
 exports.markAttendance = async (sessionId, attendanceData, user) => {
   try {
     const session = await db.Session.findByPk(sessionId, {
