@@ -22,3 +22,14 @@ exports.createTeacherWithUser = async ({ name, email, password }) => {
 
   return newTeacher;
 };
+
+exports.getAllTeachers = async () => {
+  return await db.Teacher.findAll({
+    include: [
+      {
+        model: db.User,
+        attributes: ['id', 'name', 'email', 'role']
+      }
+    ]
+  });
+};

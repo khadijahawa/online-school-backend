@@ -8,6 +8,7 @@ const adminRoutes = require('./routes/admin');
 const studentRoutes = require('./routes/student');
 const courseRoutes = require('./routes/course');
 const authRoutes = require('./routes/auth');
+const teacherRoutes = require('./routes/teacher');
 
 // CORS ayarları
 const corsOptions = {
@@ -26,6 +27,7 @@ app.use('/auth', authRoutes);
 app.use('/admin', adminRoutes);
 app.use('/students', studentRoutes);
 app.use('/courses', courseRoutes);
+app.use('/teachers', teacherRoutes);
 
 
 const PORT = process.env.PORT || 3000;
