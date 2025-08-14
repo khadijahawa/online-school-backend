@@ -1,7 +1,9 @@
 module.exports = (sequelize, DataTypes) => {
   const Teacher = sequelize.define('Teacher', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    userId: { type: DataTypes.INTEGER, allowNull: false, field: 'user_id' },
+    userId: { type: DataTypes.INTEGER, 
+      allowNull: false, 
+      field: 'user_id' },
     createdAt: { type: DataTypes.DATE, field: 'created_at' },
     updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
   }, {

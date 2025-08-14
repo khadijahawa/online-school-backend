@@ -72,17 +72,59 @@ exports.markAttendance = async (req, res) => {
 };
 
 // Öğrenciyi kursa kaydetme
-  exports.enrollStudentToCourse = async (req, res) => {
-    const { id: courseId } = req.params;
-    const { studentId } = req.body;
+exports.enrollStudentToCourse = async (req, res) => {
+  const { id: courseId } = req.params;
+  const { studentId } = req.body;
+
+  try {
+    const result = await courseService.enrollStudentToCourse(courseId, studentId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Kursa kayıt hatası:', error);
+    res.status(500).json({ message: error.message || 'Sunucu hatası' });
+  }
+};
   
-    try {
-      const result = await courseService.enrollStudentToCourse(courseId, studentId);
-      res.status(200).json(result);
-    } catch (error) {
-      console.error('Kursa kayıt hatası:', error);
-      res.status(500).json({ message: error.message || 'Sunucu hatası' });
-    }
-  };
-  
+// PUT /courses/:id
+exports.updateCourse = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const payload = req.body;
+    const user = req.user; // verifyToken ile geliyor
+
+    const updated = await courseService.updateCourse({ courseId, payload, user });
+    res.json({ message: 'Course updated', course: updated });
+  } catch (err) {
+    console.error('Course update error:', err);
+    res.status(400).json({ message: err.message || 'Update failed' });
+  }
+};
+
+// DELETE /courses/:id  (soft-delete: archive)
+exports.archiveCourse = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const user = req.user;
+
+    const result = await courseService.archiveCourse({ courseId, user });
+    res.json({ message: 'Course archived', ...result });
+  } catch (err) {
+    console.error('Course archive error:', err);
+    res.status(400).json({ message: err.message || 'Archive failed' });
+  }
+};
+
+// DELETE /courses/:id/hard  (hard delete: ilişkiler yoksa)
+exports.hardDeleteCourse = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const user = req.user;
+
+    const result = await courseService.hardDeleteCourse({ courseId, user });
+    res.json({ message: 'Course hard-deleted', ...result });
+  } catch (err) {
+    console.error('Course hard delete error:', err);
+    res.status(400).json({ message: err.message || 'Hard delete failed' });
+  }
+};
   

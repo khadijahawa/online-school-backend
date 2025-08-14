@@ -148,3 +148,76 @@ exports.enrollStudentToCourse = async (courseId, studentId) => {
   return { message: 'Öğrenci başarıyla kursa kaydedildi' };
 };
 
+const ALLOWED_STATUSES = ['active', 'inactive', 'archived'];
+
+exports.updateCourse = async ({ courseId, payload, user }) => {
+  const course = await db.Course.findByPk(courseId);
+  if (!course) throw new Error('Course not found');
+
+  // yetki kontrolü
+  if (user.role === 'teacher') {
+    if (!user.teacherId || course.teacher_id !== user.teacherId) {
+      throw new Error('You cannot update this course');
+    }
+  }
+
+  // Teacher hangi alanları güncelleyebilir?
+  const updatableByTeacher = ['title', 'total_sessions'];
+  const updatableByAdmin   = ['title', 'total_sessions', 'status', 'teacher_id'];
+
+  const allowedFields = user.role === 'admin' ? updatableByAdmin : updatableByTeacher;
+
+  // Status validasyonu (admin güncellerse)
+  if (payload.status && !ALLOWED_STATUSES.includes(payload.status)) {
+    throw new Error('Invalid status');
+  }
+
+  // Sadece izinli alanları bırak
+  const updateData = {};
+  for (const key of Object.keys(payload || {})) {
+    if (allowedFields.includes(key)) updateData[key] = payload[key];
+  }
+
+  // değişecek bir şey yoksa
+  if (Object.keys(updateData).length === 0) {
+    return course; // no-op
+  }
+
+  await course.update(updateData);
+  return course;
+};
+
+
+// Soft-delete (status=archived)
+exports.archiveCourse = async ({ courseId, user }) => {
+  if (user.role !== 'admin') {
+    throw new Error('Only admin can archive courses');
+  }
+  const course = await db.Course.findByPk(courseId);
+  if (!course) throw new Error('Course not found');
+
+  await course.update({ status: 'archived' });
+  return { archived: true, courseId: course.id };
+};
+
+
+// Hard-delete (ilişkiler yoksa)
+exports.hardDeleteCourse = async ({ courseId, user }) => {
+  if (user.role !== 'admin') {
+    throw new Error('Only admin can hard-delete courses');
+  }
+  const course = await db.Course.findByPk(courseId);
+  if (!course) throw new Error('Course not found');
+
+  // ilişkileri kontrol et
+  const sessionsCount = await db.Session.count({ where: { course_id: courseId } });
+  const enrollmentsCount = await db.CourseStudent.count({ where: { course_id: courseId } });
+  const teacherPaymentsCount = await db.TeacherPayment.count({ where: { course_id: courseId } });
+
+  if (sessionsCount > 0 || enrollmentsCount > 0 || teacherPaymentsCount > 0) {
+    throw new Error('Course has related data. Archive it instead of hard delete.');
+  }
+
+  await course.destroy();
+  return { deleted: true, courseId };
+};
