@@ -7,9 +7,9 @@ const isAdmin  = require('../middleware/isAdmin');
 
 // POST /students
 router.post('/', verifyToken, isAdmin, studentController.addStudent);
-router.get('/', verifyToken, isAdmin, studentController.getAllStudents);
-router.put('/:id', verifyToken, isAdmin, studentController.updateStudent);
 router.delete('/:id', verifyToken, isAdmin, studentController.deleteStudent);
 router.get('/:id/courses', verifyToken, isAdmin, studentController.getStudentCourses);
+router.get('/', verifyToken, isAdmin, studentController.listStudentsWithCourseCount);
+router.put('/:id', verifyToken, isAdmin, studentController.updateStudent);
 
 module.exports = router;

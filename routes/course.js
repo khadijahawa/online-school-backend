@@ -16,5 +16,6 @@ router.put('/:id', verifyToken, courseController.updateCourse);
 router.delete('/:id', verifyToken, isAdmin, courseController.archiveCourse);
 // HARD DELETE — sadece admin + ilişkiler yoksa
 router.delete('/:id/hard', verifyToken, isAdmin, courseController.hardDeleteCourse);
+router.delete('/:courseId/students/:studentId', verifyToken, isAdmin, courseController.removeStudentFromCourse);
 
 module.exports = router;

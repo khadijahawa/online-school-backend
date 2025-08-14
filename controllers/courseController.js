@@ -128,3 +128,18 @@ exports.hardDeleteCourse = async (req, res) => {
   }
 };
   
+exports.removeStudentFromCourse = async (req, res) => {
+  try {
+    const { courseId, studentId } = req.params;
+    const user = req.user; // verifyToken’den geliyor
+    const result = await courseService.removeStudentFromCourse({ courseId, studentId, user });
+
+    if (!result.ok) {
+      return res.status(result.status).json({ message: result.message });
+    }
+    res.json({ message: result.message });
+  } catch (err) {
+    console.error('Remove student from course error:', err);
+    res.status(400).json({ message: err.message || 'Operation failed' });
+  }
+};

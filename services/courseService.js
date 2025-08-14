@@ -1,5 +1,5 @@
 const db = require('../models');
-const teacher = require('../models/teacher');
+const { Op } = require('sequelize');
 
 // Kurs oluşturma servisi
 exports.createCourse = async ({ title, course_no, total_sessions, teacher_id }) => {
@@ -220,4 +220,57 @@ exports.hardDeleteCourse = async ({ courseId, user }) => {
 
   await course.destroy();
   return { deleted: true, courseId };
+};
+
+exports.removeStudentFromCourse = async ({ courseId, studentId, user }) => {
+  // Admin her şeyi yapabilir. Teacher sadece kendi kursunda yapabilir.
+  if (user.role === 'teacher') {
+    if (!user.teacherId) throw new Error('TeacherId missing in token');
+    const course = await db.Course.findByPk(courseId);
+    if (!course) throw new Error('Course not found');
+    if (course.teacher_id !== user.teacherId) {
+      throw new Error('You are not the owner of this course');
+    }
+  }
+
+  // Enrollment var mı?
+  const cs = await db.CourseStudent.findOne({
+    where: { course_id: courseId, student_id: studentId },
+  });
+  if (!cs) {
+    return { ok: false, status: 404, message: 'Student is not enrolled in this course' };
+  }
+
+  const t = await db.sequelize.transaction();
+  try {
+    // 1) Course enrollment’ı sil
+    await db.CourseStudent.destroy({
+      where: { course_id: courseId, student_id: studentId },
+      transaction: t,
+    });
+
+    // 2) Aynı kursun tüm session’larındaki yoklamayı da temizle (opsiyonel ama mantıklı)
+    const sessionIds = await db.Session.findAll({
+      where: { course_id: courseId },
+      attributes: ['id'],
+      raw: true,
+      transaction: t,
+    }).then(rows => rows.map(r => r.id));
+
+    if (sessionIds.length > 0 && db.SessionStudent) {
+      await db.SessionStudent.destroy({
+        where: {
+          session_id: { [Op.in]: sessionIds },
+          student_id: studentId,
+        },
+        transaction: t,
+      });
+    }
+
+    await t.commit();
+    return { ok: true, status: 200, message: 'Student removed from course' };
+  } catch (err) {
+    await t.rollback();
+    throw err;
+  }
 };
